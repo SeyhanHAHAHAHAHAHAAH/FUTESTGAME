@@ -1,64 +1,69 @@
 #include <stdio.h>
 #include <SDL2/SDL.h>
+#include <stdbool.h>
+#include "./definitionen.h"
+
+int game_is_running = FAIL;
+SDL_Window* window = NULL;
+SDL_Renderer* renderer = NULL;
+int last_frame_time = 0;
+
+int init(void) { 
+    if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
+        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
+        return FAIL;
+    }
+    window = SDL_CreateWindow("Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
+    if(window == NULL) {      
+        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
+        return FAIL;
+    }
+    renderer = SDL_CreateRenderer(window, -1, 0);
+    if(renderer == NULL) {
+        printf("Window couldn't be rendered! SDL_Error: %s\n", SDL_GetError());
+        return FAIL;
+    }
+    return SUCCESS;
+}
+
+void exit_game() {
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
+
+void update() {
+    while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME)); //locks game frame rate
+    last_frame_time = SDL_GetTicks();
+}
 
 // Function prototyp für createMap()
 void createMap(SDL_Renderer *renderer);
 
 int main() {
-    // Initialisierung für SDL
-    if (SDL_Init(SDL_INIT_VIDEO) != 0) {
-        printf("SDL_Init fehlgeschlagen: %s\n", SDL_GetError());
-        return 1;
-    }
-
-    // Erstellung SDL-Fenster
-    SDL_Window* window = SDL_CreateWindow(
-        "SDL Fenster",
-        SDL_WINDOWPOS_CENTERED,
-        SDL_WINDOWPOS_CENTERED,
-        640, 640, // Breite und Höhe 
-        SDL_WINDOW_SHOWN
-    );
-    if (window == NULL) {
-        printf("SDL_CreateWindow fehlgeschlagen: %s\n", SDL_GetError());
-        return 1;
-    }
-
-   SDL_Renderer *renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED| SDL_RENDERER_PRESENTVSYNC);
-   if (renderer == NULL){
-    printf("SDL_CreateRenderer fehlgeschlagen: %s\n", SDL_GetError());
-    SDL_DestroyWindow(window);//falls render fehlschlägt auch window schliessen
-    SDL_Quit();
-    return 1;
-   }
-   SDL_Surface *surface = IMG_Load("resources/hello.png");
-   if (surface==NULL)
-   {
-    printf("SDL_Surface fehlgeschlagen: %s\n", SDL_GetError());
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit;
-   }
-    createMap(renderer);
-
-    // Schleife die das fenster geöffnet hält bis benutzer es schließt
-    SDL_Event event;
-    int running = 1;
-    while (running) {
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = 0;
+    game_is_running = init();
+    while(game_is_running) {
+        SDL_Surface *surface = IMG_Load("resources/hello.png");
+        if (surface==NULL) {
+            printf("SDL_Surface fehlgeschlagen: %s\n", SDL_GetError());
+            SDL_DestroyRenderer(renderer);
+            SDL_DestroyWindow(window);
+            SDL_Quit;
+        }
+        createMap(renderer);
+        // Schleife die das fenster geöffnet hält bis benutzer es schließt
+        SDL_Event event;
+        int running = 1;
+        while (running) {
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_QUIT) {
+                    running = 0;
+                }
             }
         }
     }
-
-    //Beenden von SDL
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-    return 0;
+    exit_game();
 }
-
 // Definition von createMap() function
 void createMap(SDL_Renderer *renderer){
 
