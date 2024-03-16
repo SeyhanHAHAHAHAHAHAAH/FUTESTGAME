@@ -1,6 +1,6 @@
 #include <stdio.h>
-#include <SDL2/SDL.h>
 #include <stdbool.h>
+#include <SDL2/SDL.h>
 #include "./definitionen.h"
 
 int game_is_running = FAIL;
@@ -8,6 +8,19 @@ SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 int last_frame_time = 0;
 void createMap(SDL_Renderer *renderer);
+
+typedef struct {
+    int x, y, hp;
+    char *name;
+} Player;
+
+void structs() {
+    Player player;
+    player.x = 50;
+    player.y = 50;
+    player.hp = 3;
+    player.name = "player 1";
+}
 
 int initialize(void) { 
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -19,7 +32,7 @@ int initialize(void) {
         printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
         return FAIL;
     }
-    renderer = SDL_CreateRenderer(window, -1, 0);
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if(renderer == NULL) {
         printf("Renderer couldn't be created! SDL_Error: %s\n", SDL_GetError());
         return FAIL;
@@ -34,7 +47,11 @@ void exit_game() {
 }
 
 void update() {
-    while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME)); //locks game frame rate
+    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time); //sleep the exe until target frame time is reached (in milliseconds)
+    if(time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
+        SDL_Delay(time_to_wait);
+    }
+    float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f; //time elapsed since last frame converted to seconds
     last_frame_time = SDL_GetTicks();
 }
 
@@ -56,40 +73,26 @@ void inputs() {
             break;
     }
 }
-
-void createMap(SDL_Renderer *renderer) {
-    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255); 
-    SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_Rect rect = {200, 200, 50, 50};
-    SDL_RenderFillRect(renderer, &rect);
-}
  
 int main() {
     if(initialize() != SUCCESS) {
         return 1; // Beende das Programm mit einem Fehlercode, wenn die Initialisierung fehlschlägt
     }
-createMap(renderer);
-game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
-
+    game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
     while(game_is_running == SUCCESS) {
-        printf("1");
         inputs();
         update();
         render();
-        
     }
     SDL_Event event;
-        int running = SUCCESS;
-        while (running) {
-            while (SDL_PollEvent(&event)) {
-                if (event.type == SDL_QUIT) {
-                    running = 0;
-                }
+    int running = SUCCESS;
+    while (running) { 
+        while (SDL_PollEvent(&event)) {
+            if (event.type == SDL_QUIT) {
+                running = 0;
             }
         }
-    
-    
+    }
     exit_game();
     return 0;
 }
