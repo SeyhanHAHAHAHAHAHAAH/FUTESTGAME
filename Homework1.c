@@ -7,6 +7,7 @@ int main() {
         printf("SDL_Init fehlgeschlagen: %s\n", SDL_GetError());
         return 1;
     }
+    //test
 
     // Erstellung des SDL-Fensters
     SDL_Window* window = SDL_CreateWindow(
