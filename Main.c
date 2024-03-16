@@ -7,8 +7,9 @@ int game_is_running = FAIL;
 SDL_Window* window = NULL;
 SDL_Renderer* renderer = NULL;
 int last_frame_time = 0;
+void createMap(SDL_Renderer *renderer);
 
-int init(void) { 
+int initialize(void) { 
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
         printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
         return FAIL;
@@ -20,7 +21,7 @@ int init(void) {
     }
     renderer = SDL_CreateRenderer(window, -1, 0);
     if(renderer == NULL) {
-        printf("Window couldn't be rendered! SDL_Error: %s\n", SDL_GetError());
+        printf("Renderer couldn't be created! SDL_Error: %s\n", SDL_GetError());
         return FAIL;
     }
     return SUCCESS;
@@ -37,23 +38,49 @@ void update() {
     last_frame_time = SDL_GetTicks();
 }
 
-// Function prototyp für createMap()
-void createMap(SDL_Renderer *renderer);
+void render() {
+    createMap(renderer); // render-Funktion ruft die createMap-Funktion auf
+    SDL_RenderPresent(renderer); // aktualisiere den Renderer
+}
 
+void inputs() {
+    SDL_Event event;
+    SDL_PollEvent(&event);
+    switch (event.type) {
+        case SDL_QUIT:
+            game_is_running = FAIL;
+            break;
+        case SDL_KEYDOWN:
+            if(event.key.keysym.sym == SDLK_ESCAPE)
+                game_is_running = FAIL;
+            break;
+    }
+}
+
+void createMap(SDL_Renderer *renderer) {
+    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255); 
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+    SDL_Rect rect = {200, 200, 50, 50};
+    SDL_RenderFillRect(renderer, &rect);
+}
+ 
 int main() {
-    game_is_running = init();
-    while(game_is_running) {
-        SDL_Surface *surface = IMG_Load("resources/hello.png");
-        if (surface==NULL) {
-            printf("SDL_Surface fehlgeschlagen: %s\n", SDL_GetError());
-            SDL_DestroyRenderer(renderer);
-            SDL_DestroyWindow(window);
-            SDL_Quit;
-        }
-        createMap(renderer);
-        // Schleife die das fenster geöffnet hält bis benutzer es schließt
-        SDL_Event event;
-        int running = 1;
+    if(initialize() != SUCCESS) {
+        return 1; // Beende das Programm mit einem Fehlercode, wenn die Initialisierung fehlschlägt
+    }
+createMap(renderer);
+game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
+
+    while(game_is_running == SUCCESS) {
+        printf("1");
+        inputs();
+        update();
+        render();
+        
+    }
+    SDL_Event event;
+        int running = SUCCESS;
         while (running) {
             while (SDL_PollEvent(&event)) {
                 if (event.type == SDL_QUIT) {
@@ -61,16 +88,8 @@ int main() {
                 }
             }
         }
-    }
+    
+    
     exit_game();
-}
-// Definition von createMap() function
-void createMap(SDL_Renderer *renderer){
-
-    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255); 
-    SDL_RenderClear(renderer);
-    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
-    SDL_Rect rect = {200, 200, 50, 50};
-    SDL_RenderFillRect(renderer, &rect);
-    SDL_RenderPresent(renderer);
+    return 0;
 }
