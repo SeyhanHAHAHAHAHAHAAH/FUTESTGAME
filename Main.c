@@ -1,26 +1,18 @@
-#include <stdio.h>
-#include <stdbool.h>
 #include <SDL2/SDL.h>
+#include <stdbool.h>
 #include "./definitionen.h"
+#include <SDL2/SDL_image.h>
 
 int game_is_running = FAIL;
-SDL_Window* window = NULL;
-SDL_Renderer* renderer = NULL;
+SDL_Window *window = NULL;
+SDL_Renderer *renderer = NULL;
+SDL_Texture *texture = NULL;
+int tw, th;// textur breite u höhe
 int last_frame_time = 0;
+int Mph = 600, Mpw = 600;
+int *ptrh = &Mph, *ptrw = &Mpw;
+
 void createMap(SDL_Renderer *renderer);
-
-typedef struct {
-    int x, y, hp;
-    char *name;
-} Player;
-
-void structs() {
-    Player player;
-    player.x = 50;
-    player.y = 50;
-    player.hp = 3;
-    player.name = "player 1";
-}
 
 int initialize(void) { 
     if(SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -35,29 +27,25 @@ int initialize(void) {
     renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
     if(renderer == NULL) {
         printf("Renderer couldn't be created! SDL_Error: %s\n", SDL_GetError());
-        return FAIL;
+        return FAIL; 
+    
     }
-    return SUCCESS;
+    texture = IMG_LoadTexture(renderer,IMGPATH);// loaded img
+    SDL_QueryTexture(texture ,NULL,NULL, ptrw , ptrh);
+    SDL_Rect texture2; texture2.x = SCREEN_WIDTH/2; texture2.y = SCREEN_HEIGHT/2;
+    return SUCCESS; 
 }
 
-void exit_game() {
-    SDL_DestroyRenderer(renderer);
-    SDL_DestroyWindow(window);
-    SDL_Quit();
-}
 
 void update() {
-    int time_to_wait = FRAME_TARGET_TIME - (SDL_GetTicks() - last_frame_time); //sleep the exe until target frame time is reached (in milliseconds)
-    if(time_to_wait > 0 && time_to_wait <= FRAME_TARGET_TIME) {
-        SDL_Delay(time_to_wait);
-    }
-    float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f; //time elapsed since last frame converted to seconds
+    while(!SDL_TICKS_PASSED(SDL_GetTicks(), last_frame_time + FRAME_TARGET_TIME)); //locks game frame rate
     last_frame_time = SDL_GetTicks();
 }
 
 void render() {
-    createMap(renderer); // render-Funktion ruft die createMap-Funktion auf
-    SDL_RenderPresent(renderer); // aktualisiere den Renderer
+    SDL_RenderClear(renderer); // render-Funktion ruft die createMap-Funktion auf
+    SDL_RenderCopy(renderer,texture, NULL, NULL ); // aktualisiere den Renderer
+    SDL_RenderPresent(renderer);
 }
 
 void inputs() {
@@ -73,26 +61,43 @@ void inputs() {
             break;
     }
 }
- 
+
+void createMap(SDL_Renderer *renderer) {
+    SDL_SetRenderDrawColor(renderer, 0, 255, 255, 255); 
+    SDL_RenderClear(renderer);
+    SDL_SetRenderDrawColor(renderer, 0, 0, 0, 255);
+}
+void exit_game() { //funktion die programm schließt
+    SDL_DestroyTexture(texture);
+    SDL_DestroyRenderer(renderer);
+    SDL_DestroyWindow(window);
+    SDL_Quit();
+}
+
 int main() {
     if(initialize() != SUCCESS) {
         return 1; // Beende das Programm mit einem Fehlercode, wenn die Initialisierung fehlschlägt
     }
-    game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
+createMap(renderer);
+game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
+
     while(game_is_running == SUCCESS) {
         inputs();
         update();
         render();
+        
     }
     SDL_Event event;
-    int running = SUCCESS;
-    while (running) { 
-        while (SDL_PollEvent(&event)) {
-            if (event.type == SDL_QUIT) {
-                running = 0;
+        int running = SUCCESS;
+        while (running) {
+            while (SDL_PollEvent(&event)) {
+                if (event.type == SDL_QUIT) {
+                    running = 0;
+                }
             }
         }
-    }
+    
+    
     exit_game();
     return 0;
 }
