@@ -9,7 +9,7 @@ SDL_Renderer *renderer = NULL;
 SDL_Texture *texture = NULL;
 int tw, th;// textur breite u höhe
 int last_frame_time = 0;
-int Mph = 600, Mpw = 600;
+int Mph = 1592, Mpw = 868;
 int *ptrh = &Mph, *ptrw = &Mpw;
 
 void createMap(SDL_Renderer *renderer);
