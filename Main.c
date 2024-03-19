@@ -2,8 +2,8 @@
 #include <stdbool.h>
 #include "./definitionen.h"
 #include <SDL2/SDL_image.h>
-int x = 100;
-int y = 200; 
+int rx = 100;
+int ry = 200; 
 int tile_size = 16;
 int game_is_running = FAIL;
 SDL_Window *window = NULL;
@@ -76,7 +76,7 @@ void render() {
     SDL_RenderClear(renderer); // render-Funktion ruft die createMap-Funktion auf
     SDL_RenderCopy(renderer, texture, NULL, NULL); // aktualisiere den Renderer
     // Draw a rectangle at position (100, 200) with width 100 and height 250
-    SDL_Rect rect = {x, y, 100, 250};
+    SDL_Rect rect = {rx, ry, 23,100};
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color to red (R,G,B,Alpha)
     SDL_RenderFillRect(renderer, &rect);             // Fill the rectangle with the current color
     SDL_RenderPresent(renderer);
@@ -91,10 +91,15 @@ void inputs() {
         break;
     case SDL_KEYDOWN:
         if (event.key.keysym.sym == SDLK_ESCAPE) {
-            game_is_running = FAIL;
+            game_is_running = FAIL;}
+        else if (event.key.keysym.sym == SDLK_LEFT){
+            rx -= 10;
+        }  else if (event.key.keysym.sym == SDLK_RIGHT){
+            rx += 10;}
+        break;
         }
     }
-}
+
 
 void exit_game() { 
     SDL_DestroyRenderer(renderer);
