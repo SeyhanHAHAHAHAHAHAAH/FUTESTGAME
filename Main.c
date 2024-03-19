@@ -2,6 +2,7 @@
 #include <stdbool.h>
 #include "./definitionen.h"
 #include <SDL2/SDL_image.h>
+int x, y;
 int rx = 100;
 int ry = 200; 
 int tile_size = 16;
@@ -14,6 +15,7 @@ int last_frame_time = 0;
 float delta_time;
 void read_map(const char* path, int map[SCREEN_HEIGHT][SCREEN_WIDTH]);
 int solid_tile(int tile);
+int lastmove; //speichert in welche richtung das letzte mal bewegt wurde
 
 int initialize(void) {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
@@ -41,9 +43,7 @@ int initialize(void) {
         printf("Renderer couldn't be created! SDL_Error: %s\n", SDL_GetError());
         return FAIL;
     }
-    int map[SCREEN_HEIGHT][SCREEN_WIDTH];
-    read_map("resource/collision.csv", map);
-    return 0;
+return SUCCESS;
 }
 
 void read_map(const char *path, int map[SCREEN_HEIGHT][SCREEN_WIDTH]) {
@@ -73,39 +73,60 @@ void update() {
     }
 }
 void render() {
-    SDL_RenderClear(renderer); // render-Funktion ruft die createMap-Funktion auf
+    SDL_RenderClear(renderer); 
     SDL_RenderCopy(renderer, texture, NULL, NULL); // aktualisiere den Renderer
-    // Draw a rectangle at position (100, 200) with width 100 and height 250
     SDL_Rect rect = {rx, ry, 23,100};
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color to red (R,G,B,Alpha)
     SDL_RenderFillRect(renderer, &rect);             // Fill the rectangle with the current color
-    SDL_RenderPresent(renderer);
+    SDL_Rect ground = {0,759, 1346,-57};
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
+     SDL_RenderFillRect(renderer, &ground);
+      SDL_RenderPresent(renderer); 
+}
+
+bool checkCollision(SDL_Rect a, SDL_Rect b) {
+    return SDL_HasIntersection(&a, &b);
 }
 
 void inputs() {
     SDL_Event event;
-    SDL_PollEvent(&event);
-    switch (event.type) {
-    case SDL_QUIT:
-        game_is_running = FAIL;
-        break;
-    case SDL_KEYDOWN:
-        if (event.key.keysym.sym == SDLK_ESCAPE) {
-            game_is_running = FAIL;}
-        else if (event.key.keysym.sym == SDLK_LEFT){
-            rx -= 10;
-        }  else if (event.key.keysym.sym == SDLK_RIGHT){
-            rx += 10;}
-        break;
+    while (SDL_PollEvent(&event)) {
+        switch (event.type) {
+            case SDL_QUIT:
+                game_is_running = FAIL;
+                break;
+            case SDL_KEYDOWN:
+                if (event.key.keysym.sym == SDLK_ESCAPE)
+                    game_is_running = FAIL;
+                else if (event.key.keysym.sym == SDLK_RIGHT){
+                    rx += 20;
+                    lastmove = 0;}
+                else if (event.key.keysym.sym == SDLK_LEFT){
+                    rx -= 20;
+                    lastmove = 1;}
+                else if (event.key.keysym.sym == SDLK_DOWN){
+                    ry += 20;
+                    lastmove = 2;
+                }
+                break;
+            case SDL_MOUSEMOTION:
+                // Get mouse coordinates
+                
+                SDL_GetMouseState(&x, &y);
+                printf("Mouse coordinates: (%d, %d)\n", x, y);
+                break;
         }
     }
-
+}
+//1349, 702) rechts 
 
 void exit_game() { 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
+
+
 
 int main() {
     if (initialize() != SUCCESS) {
@@ -116,7 +137,23 @@ int main() {
         render();
         inputs();
         update();
+        SDL_Rect rect = {rx, ry, 23,100};
+        SDL_Rect ground = {0,759, 1346,57};
+        if (checkCollision(rect, ground)) {
+            switch (lastmove)
+            {case 0:
+            rx -= 20;
+            break;
+            case 1:
+            rx += 20;
+            break;
+            case 2:
+            ry -= 20;
+            break;
+            }
+        }
     }
     exit_game();
     return 0;
 }
+
