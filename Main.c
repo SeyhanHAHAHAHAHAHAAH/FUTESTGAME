@@ -1,8 +1,9 @@
 #include <SDL2/SDL.h>
 #include <stdbool.h>
-#include <SDL2/SDL_image.h>
 #include "./definitionen.h"
-
+#include <SDL2/SDL_image.h>
+int x = 100;
+int y = 200; 
 int tile_size = 16;
 int game_is_running = FAIL;
 SDL_Window *window = NULL;
@@ -11,7 +12,6 @@ SDL_Surface *surface = NULL;
 SDL_Texture *texture = NULL;
 int last_frame_time = 0;
 float delta_time;
-
 void read_map(const char* path, int map[SCREEN_HEIGHT][SCREEN_WIDTH]);
 int solid_tile(int tile);
 
@@ -60,7 +60,7 @@ void read_map(const char *path, int map[SCREEN_HEIGHT][SCREEN_WIDTH]) {
     fclose(fp);
 }
 
-int solid_tile(int tile) {
+int solid_tile (int tile) {
     return tile != -1;
 }
 
@@ -71,6 +71,15 @@ void update() {
     if (time_to_wait > 0 && time_to_wait >= FRAME_TARGET_TIME){
         SDL_Delay(time_to_wait);
     }
+}
+void render() {
+    SDL_RenderClear(renderer); // render-Funktion ruft die createMap-Funktion auf
+    SDL_RenderCopy(renderer, texture, NULL, NULL); // aktualisiere den Renderer
+    // Draw a rectangle at position (100, 200) with width 100 and height 250
+    SDL_Rect rect = {x, y, 100, 250};
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color to red (R,G,B,Alpha)
+    SDL_RenderFillRect(renderer, &rect);             // Fill the rectangle with the current color
+    SDL_RenderPresent(renderer);
 }
 
 void inputs() {
@@ -87,7 +96,7 @@ void inputs() {
     }
 }
 
-void exit_game() {
+void exit_game() { 
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
@@ -99,6 +108,7 @@ int main() {
     }
     game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
     while (game_is_running == SUCCESS) {
+        render();
         inputs();
         update();
     }

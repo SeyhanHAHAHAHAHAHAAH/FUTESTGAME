@@ -52,10 +52,9 @@ void update() {
 void render() {
     SDL_RenderClear(renderer); // render-Funktion ruft die createMap-Funktion auf
     SDL_RenderCopy(renderer, texture, NULL, NULL); // aktualisiere den Renderer
-    // Draw a rectangle at position (100, 200) with width 100 and height 250
-    SDL_Rect rect = {x, y, 100, 250};
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color to red (R,G,B,Alpha)
-    SDL_RenderFillRect(renderer, &rect);             // Fill the rectangle with the current color
+    SDL_Rect rect = {x, y, 50, 32};
+    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // wählt farbe
+    SDL_RenderFillRect(renderer, &rect);          
     SDL_RenderPresent(renderer);
 }
 void inputs() {
@@ -69,10 +68,11 @@ void inputs() {
         if (event.key.keysym.sym == SDLK_ESCAPE)
             game_is_running = FAIL;
         else if (event.key.keysym.sym == SDLK_RIGHT)
-        x += 20 * delta_time;
+            x += 20;
         else if (event.key.keysym.sym == SDLK_LEFT)
-        x -= 10;
-        //else if (event.key.keysym.sym == SDLK_DOWN)
+            x -= 10;
+        else if (event.key.keysym.sym == SDLK_DOWN)
+            y += 10;
         break;
     }
 }
@@ -96,7 +96,6 @@ int main() {
     }
     createMap(renderer);
     game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
-
     while (game_is_running == SUCCESS) {
         inputs();
         update();
