@@ -14,7 +14,6 @@ SDL_Texture *texture = NULL;
 int last_frame_time = 0;
 float delta_time;
 void read_map(const char* path, int map[SCREEN_HEIGHT][SCREEN_WIDTH]);
-int solid_tile(int tile);
 int lastmove; //speichert in welche richtung das letzte mal bewegt wurde
 
 int initialize(void) {
@@ -60,9 +59,7 @@ void read_map(const char *path, int map[SCREEN_HEIGHT][SCREEN_WIDTH]) {
     fclose(fp);
 }
 
-int solid_tile (int tile) {
-    return tile != -1;
-}
+
 
 void update() {
     float delta_time = (SDL_GetTicks() - last_frame_time) / 1000.0f;
@@ -75,13 +72,14 @@ void update() {
 void render() {
     SDL_RenderClear(renderer); 
     SDL_RenderCopy(renderer, texture, NULL, NULL); // aktualisiere den Renderer
-    SDL_Rect rect = {rx, ry, 23,100};
+    SDL_Rect rect = {rx, ry, 25,40};
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color to red (R,G,B,Alpha)
     SDL_RenderFillRect(renderer, &rect);             // Fill the rectangle with the current color
-    SDL_Rect ground = {0,759, 1346,-57};
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-     SDL_RenderFillRect(renderer, &ground);
-      SDL_RenderPresent(renderer); 
+    SDL_Rect ground = {0,700, 1346,100}; 
+    SDL_Rect p1 = {218,431, 300,31}; 
+    SDL_Rect p2 = {860,431, 300,31};
+    SDL_Rect p3 = {525,273, 299,31};
+    SDL_RenderPresent(renderer);
 }
 
 bool checkCollision(SDL_Rect a, SDL_Rect b) {
@@ -137,9 +135,12 @@ int main() {
         render();
         inputs();
         update();
-        SDL_Rect rect = {rx, ry, 23,100};
-        SDL_Rect ground = {0,759, 1346,57};
-        if (checkCollision(rect, ground)) {
+        SDL_Rect rect = {rx, ry, 25,40};
+        SDL_Rect ground = {0,710, 1346,100};
+        SDL_Rect p1 = {226,440, 255,31};
+        SDL_Rect p2 = {862,440, 260,31};
+        SDL_Rect p3 = {525,285, 299,31};
+        if (checkCollision(rect, ground) || checkCollision(rect, p1) || checkCollision(rect, p2) || checkCollision(rect, p3)) {
             switch (lastmove)
             {case 0:
             rx -= 20;
