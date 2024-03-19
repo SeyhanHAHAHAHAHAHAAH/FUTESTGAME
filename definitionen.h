@@ -10,3 +10,4 @@
 #define FRAME_TARGET_TIME (1000/FPS)
 #define IMGPATH "resource/map.png"
 
+//496 431

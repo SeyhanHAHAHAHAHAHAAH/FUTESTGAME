@@ -11,6 +11,10 @@ SDL_Window *window = NULL;
 SDL_Renderer *renderer = NULL;
 SDL_Surface *surface = NULL;
 SDL_Texture *texture = NULL;
+int last_frame_time = 0;
+float delta_time;
+void read_map(const char* path, int map[SCREEN_HEIGHT][SCREEN_WIDTH]);
+int solid_tile(int tile);
 int lastmove; //speichert in welche richtung das letzte mal bewegt wurde
 
 typedef struct {
@@ -71,26 +75,16 @@ void loadgame(GameState *game) {
         printf("Cannot find standing.png!");
         exit_game();
     }
-    game -> playerFrames[0] = SDL_CreateTextureFromSurface(game -> renderer, surface);
-    SDL_FreeSurface(surface);
-
-    surface = IMG_Load("resource/standing.png");
-    if (surface == NULL) {
-        printf("Cannot find walking.png!");
-        exit_game();
+    for (int y = 0; y < SCREEN_HEIGHT; y++) {
+        for (int x = 0; x < SCREEN_WIDTH; x++) {
+            fscanf(fp, "%d", &map[y][x]);
+        }
     }
-    game -> playerFrames[1] = SDL_CreateTextureFromSurface(game -> renderer, surface);
-    SDL_FreeSurface(surface);
-    game -> player1.x = 320;
-    game -> player1.y = 320;
-    game -> player1.dx = 0;
-    game -> player1.dy = 0;
-    game -> player1.onLedge = 0;
-    game -> player1.animFrame = 0;
-    game -> player1.facingLeft = 1;
-    game -> player1.slowingDown = 0;
+    fclose(fp);
+}
 
-    game -> time = 0;
+int solid_tile (int tile) {
+    return tile != -1;
 }
 
 void process(GameState *game) {
@@ -114,15 +108,13 @@ void process(GameState *game) {
 void render(GameState *game) {
     SDL_RenderClear(renderer); 
     SDL_RenderCopy(renderer, texture, NULL, NULL); // aktualisiere den Renderer
-    SDL_Rect rect = {rx, ry, 23,100};
+    SDL_Rect rect = {rx, ry, 25,40};
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color to red (R,G,B,Alpha)
     SDL_RenderFillRect(renderer, &rect);             // Fill the rectangle with the current color
     SDL_Rect ground = {0,759, 1346,-57};
     SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255);
-    SDL_RenderFillRect(renderer, &ground);
-    SDL_Rect rect2 = {game -> player1.x, game -> player1.y, 24, 24};
-    SDL_RenderCopyEx(renderer, game -> playerFrames[game -> player1.animFrame], NULL, &rect, 0, NULL, (game -> player1.facingLeft == 0)); 
-    SDL_RenderPresent(renderer);
+     SDL_RenderFillRect(renderer, &ground);
+      SDL_RenderPresent(renderer); 
 }
 
 bool checkCollision(SDL_Rect a, SDL_Rect b) {
@@ -190,21 +182,22 @@ int main() {
     loadgame(&gameState);
     game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
     while (game_is_running == SUCCESS) {
-        render(&gameState);
-        inputs(&gameState);
+        render();
+        inputs();
+        update();
         SDL_Rect rect = {rx, ry, 23,100};
         SDL_Rect ground = {0,759, 1346,57};
         if (checkCollision(rect, ground)) {
-            switch (lastmove) {
-                case 0:
-                    rx -= 20;
-                    break;
-                case 1:
-                    rx += 20;
-                    break;
-                case 2:
-                    ry -= 20;
-                    break;
+            switch (lastmove)
+            {case 0:
+            rx -= 20;
+            break;
+            case 1:
+            rx += 20;
+            break;
+            case 2:
+            ry -= 20;
+            break;
             }
         }
     }
