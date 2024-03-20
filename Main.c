@@ -1,204 +1,169 @@
-#include <SDL2/SDL.h>
 #include <stdbool.h>
-#include "./definitionen.h"
+#include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
-int x, y;
-int rx = 100;
-int ry = 200; 
-int tile_size = 16;
-int game_is_running = FAIL;
-SDL_Window *window = NULL;
-SDL_Renderer *renderer = NULL;
-SDL_Surface *surface = NULL;
-SDL_Texture *texture = NULL;
-int lastmove; //speichert in welche richtung das letzte mal bewegt wurde
+#include "./definitionen.h"
+
+int x, y, rx = 100, ry = 200, game_is_running = FAIL, lastmove;
+
+SDL_Window* window = NULL; 
+SDL_Renderer* renderer = NULL;
+SDL_Texture* map_texture = NULL;
+SDL_Texture* character_texture = NULL;
+SDL_Texture* texture = NULL;
 
 typedef struct {
-    float x, y;
-    float dx, dy;
     short life;
-    int onLedge;
-    int animFrame, facingLeft, slowingDown;
+    float dy;
+    int animFrame;
+    bool jumping;
+    SDL_Rect player_rect;
+    SDL_Texture *texture;
 } Player;
 
-typedef struct {
-    Player player1;
-    SDL_Texture *playerFrames[2];
-    int time;
-    SDL_Renderer *renderer;
-} GameState;
-
-void loadgame(GameState *game);
-
-int initialize(void) {
+int initialize() {
     if (SDL_Init(SDL_INIT_EVERYTHING) != 0) {
-        printf("SDL could not initialize! SDL_Error: %s\n", SDL_GetError());
-        return FAIL;
+        printf("SDL couldn't be initialized! SDL_Error: %s\n", SDL_GetError());
+        return 1;
     }
-    window = SDL_CreateWindow("Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, SDL_WINDOW_BORDERLESS);
+
+    if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) {
+        printf("SDL_image couldn't be initialized! SDL_Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    window = SDL_CreateWindow("Gaming", SDL_WINDOWPOS_CENTERED, SDL_WINDOWPOS_CENTERED, SCREEN_WIDTH, SCREEN_HEIGHT, 0);
     if (window == NULL) {
-        printf("Window could not be created! SDL_Error: %s\n", SDL_GetError());
-        return FAIL;
+        printf("Window couldn't be created! SDL_Error: %s\n", SDL_GetError());
+        return 1;
     }
-    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED);
+
+    renderer = SDL_CreateRenderer(window, -1, SDL_RENDERER_ACCELERATED | SDL_RENDERER_PRESENTVSYNC);
     if (renderer == NULL) {
         printf("Renderer couldn't be created! SDL_Error: %s\n", SDL_GetError());
-        return FAIL;
+        return 1;
     }
-    surface = IMG_Load("resource/map.png");
-    if (surface == NULL) {
-        printf("Renderer couldn't be created! SDL_Error: %s\n", SDL_GetError());
-        return FAIL;
+
+    return 0;
+} 
+
+int load_textures() {
+    SDL_Surface *map_surface = IMG_Load("resource/map.png");
+    if (map_surface == NULL) {
+        printf("map.png couldn't be found! SDL_Error: %s\n", IMG_GetError());
+        return 1;
     }
-    texture = SDL_CreateTextureFromSurface(renderer, surface);
-    SDL_FreeSurface(surface);
-    if (texture == NULL) {
-        printf("Renderer couldn't be created! SDL_Error: %s\n", SDL_GetError());
-        return FAIL;
+    map_texture = SDL_CreateTextureFromSurface(renderer, map_surface);
+    SDL_FreeSurface(map_surface);
+
+    SDL_Surface* character_surface = IMG_Load("resource/standing.png");
+    if (character_surface == NULL) {
+        printf("standing.png couldn't be found! SDL_Error: %s\n", IMG_GetError());
+        return 1;
     }
-    return SUCCESS;
+    character_texture = SDL_CreateTextureFromSurface(renderer, character_surface);
+    SDL_FreeSurface(character_surface);
+
+    return 0;
 }
 
-void exit_game() { 
+void jump(Player* player1) {
+    if (!player1 -> jumping) {
+        player1 -> dy= -7;
+        player1 -> jumping = 1;
+    }
+}
+
+void exit_game(Player *player) { 
+    SDL_DestroyTexture(player -> texture);
+    SDL_DestroyTexture(map_texture);
     SDL_DestroyRenderer(renderer);
     SDL_DestroyWindow(window);
     SDL_Quit();
 }
 
-void loadgame(GameState *game) {
-    surface = IMG_Load("resource/walking.png");
-    if (surface == NULL) {
-        printf("Cannot find standing.png!");
-        exit_game();
-    }
-    game -> playerFrames[0] = SDL_CreateTextureFromSurface(game -> renderer, surface);
-    SDL_FreeSurface(surface);
-
-    surface = IMG_Load("resource/standing.png");
-    if (surface == NULL) {
-        printf("Cannot find walking.png!");
-        exit_game();
-    }
-    game -> playerFrames[1] = SDL_CreateTextureFromSurface(game -> renderer, surface);
-    SDL_FreeSurface(surface);
-    game -> player1.x = 320;
-    game -> player1.y = 320;
-    game -> player1.dx = 0;
-    game -> player1.dy = 0;
-    game -> player1.onLedge = 0;
-    game -> player1.animFrame = 0;
-    game -> player1.facingLeft = 1;
-    game -> player1.slowingDown = 0;
-
-    game -> time = 0;
-}
-
-void process(GameState *game) {
-    game -> time++;
-    Player *player1 = &game -> player1;
-    player1 -> x += player1 -> dx;
-    player1 -> y += player1 -> dy;
-    if (player1 -> dx != 0 && player1 -> onLedge && !player1 -> slowingDown) {
-        if (game -> time % 8 == 0){
-            if (player1 -> animFrame == 0){
-                player1 -> animFrame = 1;
-            }
-            else {
-                player1 -> animFrame = 0;
-            }
-        }
-    }
-    player1 -> dy += GRAVITY;
-}
-
-void render(GameState *game) {
+void render(Player *player) {
     SDL_RenderClear(renderer); 
-    SDL_RenderCopy(renderer, texture, NULL, NULL); // aktualisiere den Renderer
-    SDL_Rect rect = {rx, ry, 23,100};
-    SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Set color to red (R,G,B,Alpha)
-    SDL_RenderFillRect(renderer, &rect);             // Fill the rectangle with the current color
+    SDL_RenderCopy(renderer, texture, NULL, NULL);
     SDL_Rect ground = {0, 700, 1346, 100};
     SDL_Rect p1 = {218, 431, 300, 31};
     SDL_Rect p2 = {860, 431, 300, 31};
     SDL_Rect p3 = {525, 273, 299, 31};
-    SDL_Rect rect2 = {game -> player1.x, game -> player1.y, 24, 24};
-    SDL_RenderCopyEx(renderer, game -> playerFrames[game -> player1.animFrame], NULL, &rect, 0, NULL, (game -> player1.facingLeft == 0)); 
+    SDL_RenderCopy(renderer, map_texture, NULL, NULL);
+    SDL_RenderCopy(renderer, player -> texture, NULL, &player ->player_rect);
     SDL_RenderPresent(renderer);
-}
+} 
 
 bool checkCollision(SDL_Rect a, SDL_Rect b) {
     return SDL_HasIntersection(&a, &b);
 }
 
-void inputs(GameState *game) {
+void inputs(Player* player1) {
     SDL_Event event;
-    while (SDL_PollEvent(&event)) {
+    while (SDL_PollEvent(&event) != 0) {
         switch (event.type) {
             case SDL_QUIT:
-                game_is_running = FAIL;
+                exit_game(player1);
+                exit(1);
                 break;
             case SDL_KEYDOWN:
                 switch(event.key.keysym.sym) {
                     case SDLK_ESCAPE:
-                        exit_game();
+                        exit_game(player1);
+                        exit(1);
                         break;
-                    case SDLK_UP:
-                        if(game -> player1.onLedge) {
-                            game -> player1.dy = -8;
-                            game -> player1.onLedge = 0;
-                        }
+                    case SDLK_SPACE:
+                        jump(player1);
+                        break;
+                    default:
                         break;
                 }
+                break;
+            default:
                 break;
         }
     }
     const Uint8 *state = SDL_GetKeyboardState(NULL);
-    if (state[SDL_SCANCODE_UP]) {
-        game -> player1.dy -= 0.2f;
-    }
     if (state[SDL_SCANCODE_LEFT]) {
-        game -> player1.dx -= 0.5;
-        if (game -> player1.dx < -6) {
-            game -> player1.dx = -6;
-        }
-        game -> player1.facingLeft = 1;
-        game -> player1.slowingDown = 0;
+        player1->player_rect.x -= MOVEMENT_SPEED;
     }
-    else if(state[SDL_SCANCODE_RIGHT]) {
-        game -> player1.dx += 0.5;
-        if (game -> player1.dx > 6) {
-            game -> player1.dx = 6;
-        } 
-        game -> player1.facingLeft = 0;
-        game -> player1.slowingDown = 0;
+    if (state[SDL_SCANCODE_RIGHT]) {
+        player1->player_rect.x += MOVEMENT_SPEED;
     }
-    else {
-        game -> player1.animFrame = 0;
-        game -> player1.dx *= 0.8f;
-        game -> player1.slowingDown = 1;
-        if (fabsf(game -> player1.dx) < 0.15) {
-            game -> player1.dx  = 0;
+    if (player1->jumping) {
+        player1->dy += GRAVITY;
+        player1->player_rect.y += player1->dy;
+        if (player1->player_rect.y >= SCREEN_HEIGHT / 2 - 25) {
+            player1->player_rect.y = SCREEN_HEIGHT / 2 - 25;
+            player1->dy = 0;
+            player1->jumping = 0;
         }
     }
 }
 
 int main() {
-    GameState gameState;
-    if (initialize() != SUCCESS) {
-        return 1; // Beende das Programm mit einem Fehlercode, wenn die Initialisierung fehlschlägt
+    if (initialize() != 0 || load_textures() != 0) {
+        return 1;
     }
-    gameState.renderer = renderer;
-    loadgame(&gameState);
-    game_is_running = SUCCESS; // Setze game_is_running auf SUCCESS, um die Hauptschleife zu betreten
-    while (game_is_running == SUCCESS) {
-        render(&gameState);
-        inputs(&gameState);
-        SDL_Rect rect = {rx, ry, 25, 40};
-        SDL_Rect ground = {0,710, 1346, 100};
-        SDL_Rect p1 = {226, 440, 255, 31};
-        SDL_Rect p2 = {862, 440, 250, 31};
-        SDL_Rect p3 = {525, 285, 299, 31};
 
+    Player player1;
+    player1.player_rect.x = 100;
+    player1.player_rect.y = 100;
+    player1.player_rect.w = 24;
+    player1.player_rect.h = 24;
+    player1.texture = character_texture;
+    player1.life = 3;
+    player1.jumping = false;
+
+    SDL_Rect rect = {rx, ry, 25, 40};
+    SDL_Rect ground = {0,710, 1346, 100};
+    SDL_Rect p1 = {226, 440, 255, 31};
+    SDL_Rect p2 = {862, 440, 250, 31};
+    SDL_Rect p3 = {525, 285, 299, 31};
+
+    game_is_running = SUCCESS; 
+
+    while (game_is_running == SUCCESS) {
+        inputs(&player1);
         if (checkCollision(rect, ground) || checkCollision(rect, p1) || checkCollision(rect, p2) || checkCollision(rect, p3)) {
             switch (lastmove) {
                 case 0:
@@ -211,8 +176,9 @@ int main() {
                     ry -= 20;
                     break;
             }
-        }
+        } 
+        render(&player1);
     }
-    exit_game();
+    exit_game(&player1);
     return 0;
 }
