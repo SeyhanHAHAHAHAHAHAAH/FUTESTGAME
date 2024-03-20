@@ -104,7 +104,7 @@ void render(Player *player) {
     SDL_RenderCopy(renderer, map_texture, NULL, NULL);
     SDL_RenderCopy(renderer, player -> texture, NULL, &player ->player_rect);
 
-    char hp[20]; // Assuming the maximum length of the integer is 20 characters
+    char hp[3];
     snprintf(hp, sizeof(hp), "%d", player->life);
     SDL_Surface* surfacetext = TTF_RenderText_Solid(font, hp, color);
     
