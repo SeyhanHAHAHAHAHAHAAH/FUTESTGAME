@@ -120,7 +120,7 @@ void render(Player *player) {
     SDL_RenderPresent(renderer);
 } 
 
-bool checkCollision(Player* player1, SDL_Rect b) {
+bool checkrectCollision(Player* player1, SDL_Rect b) {
     return SDL_HasIntersection(&player1 -> player_rect, &b);
 }
 
@@ -143,6 +143,9 @@ void inputs(Player* player1) {
                         break;
                     default:
                         break;
+                    /*case SDLK_SPACE:
+                     fireBullet(game);
+                     break;*/
                 }
                 break;
             default:
@@ -166,6 +169,7 @@ void inputs(Player* player1) {
         }
     }
 }
+
 
 int main() {
     if (initialize() != 0 || load_textures() != 0) {
