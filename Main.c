@@ -1,6 +1,7 @@
 #include <stdbool.h>
 #include <SDL2/SDL.h>
 #include <SDL2/SDL_image.h>
+#include <SDL_ttf.h>
 #include "./definitionen.h"
 
 int x, y, rx = 100, ry = 200, game_is_running = FAIL, lastmove;
@@ -10,6 +11,7 @@ SDL_Renderer* renderer = NULL;
 SDL_Texture* map_texture = NULL;
 SDL_Texture* character_texture = NULL;
 SDL_Texture* texture = NULL;
+TTF_Font* font;
 
 typedef struct {
     short life;
@@ -28,6 +30,17 @@ int initialize() {
 
     if((IMG_Init(IMG_INIT_PNG) & IMG_INIT_PNG) != IMG_INIT_PNG) {
         printf("SDL_image couldn't be initialized! SDL_Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    if (TTF_Init() != 0) {
+        printf("TTF_Init couldn't be initialized! SDL_Error: %s\n", SDL_GetError());
+        return 1;
+    }
+
+    font = TTF_OpenFont("resource/font.ttf", 10);
+    if (font == NULL) {
+        printf("font.tft couldn't be found! SDL_Error: %s\n", SDL_GetError());
         return 1;
     }
 
@@ -68,7 +81,7 @@ int load_textures() {
 
 void jump(Player* player1) {
     if (!player1 -> jumping) {
-        player1 -> dy= -7;
+        player1 -> dy = -10;
         player1 -> jumping = 1;
     }
 }
@@ -82,19 +95,33 @@ void exit_game(Player *player) {
 }
 
 void render(Player *player) {
-    SDL_RenderClear(renderer); 
+    SDL_Color color = {0, 0, 0, 255};
+    SDL_Rect recht = {140, 30, 60, 60};
+
+    SDL_RenderClear(renderer);
+
     SDL_RenderCopy(renderer, texture, NULL, NULL);
+    SDL_RenderCopy(renderer, map_texture, NULL, NULL);
+    SDL_RenderCopy(renderer, player -> texture, NULL, &player ->player_rect);
+
+    char hp[20]; // Assuming the maximum length of the integer is 20 characters
+    snprintf(hp, sizeof(hp), "%d", player->life);
+    SDL_Surface* surfacetext = TTF_RenderText_Solid(font, hp, color);
+    
+    surfacetext = TTF_RenderText_Solid(font, hp , color);
+    SDL_Texture* texturetext = SDL_CreateTextureFromSurface(renderer, surfacetext);
+    SDL_FreeSurface(surfacetext);
+    SDL_RenderCopy(renderer, texturetext, NULL, &recht);
+    SDL_DestroyTexture(texturetext);
     SDL_Rect ground = {0, 700, 1346, 100};
     SDL_Rect p1 = {218, 431, 300, 31};
     SDL_Rect p2 = {860, 431, 300, 31};
     SDL_Rect p3 = {525, 273, 299, 31};
-    SDL_RenderCopy(renderer, map_texture, NULL, NULL);
-    SDL_RenderCopy(renderer, player -> texture, NULL, &player ->player_rect);
     SDL_RenderPresent(renderer);
 } 
 
-bool checkCollision(SDL_Rect a, SDL_Rect b) {
-    return SDL_HasIntersection(&a, &b);
+bool checkCollision(Player* player1, SDL_Rect b) {
+    return SDL_HasIntersection(&player1 -> player_rect, &b);
 }
 
 void inputs(Player* player1) {
@@ -148,10 +175,10 @@ int main() {
     Player player1;
     player1.player_rect.x = 100;
     player1.player_rect.y = 100;
-    player1.player_rect.w = 24;
-    player1.player_rect.h = 24;
+    player1.player_rect.w = 50;
+    player1.player_rect.h = 60;
     player1.texture = character_texture;
-    player1.life = 3;
+    player1.life = 5;
     player1.jumping = false;
 
     SDL_Rect rect = {rx, ry, 25, 40};
@@ -164,7 +191,7 @@ int main() {
 
     while (game_is_running == SUCCESS) {
         inputs(&player1);
-        if (checkCollision(rect, ground) || checkCollision(rect, p1) || checkCollision(rect, p2) || checkCollision(rect, p3)) {
+        if (checkCollision(&player1, ground) || checkCollision(&player1, p1) || checkCollision(&player1, p2) || checkCollision(&player1, p3)) {
             switch (lastmove) {
                 case 0:
                     rx -= 20;
