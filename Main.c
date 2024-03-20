@@ -28,6 +28,16 @@ typedef struct {
     SDL_Renderer *renderer;
 } GameState;
 
+typedef struct {
+    float x, y;
+    dx, dy;
+    int status; //zeigt ob kugel noch existiert
+} Projektil;
+
+Projektil bullet = {0};
+
+
+
 void loadgame(GameState *game);
 
 int initialize(void) {
@@ -126,8 +136,22 @@ void render(GameState *game) {
     SDL_RenderPresent(renderer);
 }
 
-bool checkCollision(SDL_Rect a, SDL_Rect b) {
+bool checkrectCollision(SDL_Rect a, SDL_Rect b) {
     return SDL_HasIntersection(&a, &b);
+}
+
+void fireBullet(GameState *game) {
+    if (!bullet.status) { // Überprüfen, ob die Kugel bereits aktiv ist
+        bullet.status = true;
+        bullet.x = game->player1.x + 12; // Positionieren Sie die Kugel in der Nähe des Spielers
+        bullet.y = game->player1.y;
+        if (game->player1.facingLeft == 1){
+            bullet.dx= -3;
+
+        }
+        bullet.dx = 3; // Setzen Sie die Geschwindigkeit der Kugel, hier könnte eine Richtung hinzugefügt werden
+        bullet.dy = 0; // Beispiel: Kugel bewegt sich nach oben
+    }
 }
 
 void inputs(GameState *game) {
@@ -148,6 +172,9 @@ void inputs(GameState *game) {
                             game -> player1.onLedge = 0;
                         }
                         break;
+                    case SDLK_SPACE:
+                     fireBullet(game);
+                     break;
                 }
                 break;
         }
@@ -182,6 +209,7 @@ void inputs(GameState *game) {
     }
 }
 
+
 int main() {
     GameState gameState;
     if (initialize() != SUCCESS) {
@@ -199,7 +227,7 @@ int main() {
         SDL_Rect p2 = {862, 440, 250, 31};
         SDL_Rect p3 = {525, 285, 299, 31};
 
-        if (checkCollision(rect, ground) || checkCollision(rect, p1) || checkCollision(rect, p2) || checkCollision(rect, p3)) {
+        if (checkrectCollision(rect, ground) || checkrectCollision(rect, p1) || checkrectCollision(rect, p2) || checkrectCollision(rect, p3)) {
             switch (lastmove) {
                 case 0:
                     rx -= 20;
