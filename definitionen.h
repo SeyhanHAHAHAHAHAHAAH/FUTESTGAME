@@ -1,6 +1,8 @@
 #define FAIL 1
 #define SUCCESS 0
 
+#define GRAVITY 0.35f
+
 #define SCREEN_WIDTH 1350
 #define SCREEN_HEIGHT 800
 
