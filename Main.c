@@ -182,7 +182,7 @@ int main() {
     player1.player_rect.w = 50;
     player1.player_rect.h = 60;
     player1.texture = character_texture;
-    player1.life = 5;
+    player1.life = 4;
     player1.jumping = false;
 
     SDL_Rect rect = {rx, ry, 25, 40};
@@ -195,7 +195,7 @@ int main() {
 
     while (game_is_running == SUCCESS) {
         inputs(&player1);
-        if (checkCollision(&player1, ground) || checkCollision(&player1, p1) || checkCollision(&player1, p2) || checkCollision(&player1, p3)) {
+        if (checkrectCollision(&player1, ground) || checkrectCollision(&player1, p1) || checkrectCollision(&player1, p2) || checkrectCollision(&player1, p3)) {
             switch (lastmove) {
                 case 0:
                     rx -= 20;
