@@ -3,6 +3,11 @@
 
 #define GRAVITY 0.35f
 #define MOVEMENT_SPEED 5
+#define MOVEMENT_SPEED_GOBLIN 3
+
+#define SPRITE_SIZE 32
+#define DIR_RIGHT 3
+#define DIR_LEFT 3
 
 #define SCREEN_WIDTH 1350
 #define SCREEN_HEIGHT 800
