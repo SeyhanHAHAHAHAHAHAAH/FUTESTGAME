@@ -2,6 +2,7 @@
     "files.associations": {
         "sdl.h": "c",
         "definitionen.h": "c",
-        "stdbool.h": "c"
+        "stdbool.h": "c",
+        "works": "c"
     }
 }
