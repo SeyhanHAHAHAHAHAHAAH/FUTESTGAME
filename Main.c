@@ -228,9 +228,12 @@ void render(Player *player, Goblin *goblin, Projektil* bullet) {
     if(goblin != NULL) {
         SDL_RenderCopy(renderer, goblin -> texture, NULL, &goblin -> goblin_rect);
     }
-
+    bullet -> bullet_rect.x = bullet -> x;
+    bullet -> bullet_rect.y = bullet -> y;
+    bullet -> bullet_rect.w = 40;
+    bullet -> bullet_rect.h = 30;
     if (bullet -> status) {
-        SDL_RenderCopy(renderer, bullet->texture, NULL, &bullet -> bullet_rect);
+        SDL_RenderCopy(renderer, bullet -> texture, NULL, &bullet -> bullet_rect);
        // SDL_Rect bulletRect = { (int)bullet.x, (int)bullet.y, 10, 10 }; // Adjust the size as needed
         //SDL_SetRenderDrawColor(renderer, 255, 0, 0, 255); // Red color
        // SDL_RenderFillRect(renderer, &bulletRect);
@@ -272,6 +275,11 @@ bool checkrectCollision(Player* player1, SDL_Rect b) {
 bool checkrectCollision2(Goblin* goblin, SDL_Rect b) {
     return SDL_HasIntersection(&goblin -> goblin_rect, &b);
 }
+
+bool checkrectoCollision3 (Goblin* goblin, Player *player1){
+return SDL_HasIntersection(&goblin -> goblin_rect, &player1-> player_rect);
+}
+
 void collision(Player *player1) {
     SDL_Rect rect = {player1->player_rect.x, player1->player_rect.y, 23, 100};
     SDL_Rect ground = {0, 759, 1346, -57};
@@ -378,9 +386,10 @@ void inputs(Player* player1) {
 void fire_bullet(Player* player1) {
     if (!bullet.status) {
         bullet.x = player1 -> player_rect.x + (player1 -> player_rect.w / 2); // 
-        bullet.y = player1 -> player_rect.y + 20; //"bullet" wird im spieler gespawnt
+        bullet.y = player1 -> player_rect.y + 12; //"bullet" wird im spieler gespawnt
+        bullet.texture = bullet_texture;
         if (facing > 0) {
-        bullet.dx = 10; //falls er nach rechts sich bewegt hat letztens
+        bullet.dx = 12; //falls er nach rechts sich bewegt hat letztens
         }
         else {
             bullet.dx = -10;// falls er nach links sich bewegt hat letztens
@@ -399,7 +408,6 @@ void update_bullet() {
         }
     }
 }
-
 int main() {
     if (initialize() != 0 || load_textures() != 0) {
         return 1;
@@ -433,6 +441,15 @@ int main() {
         inputs(&player1);
         collision(&player1);
         update_bullet();
+        if (goblin != NULL && checkrectoCollision3(goblin, &player1)) {// leben des spielers wird bei aufstoß verringert
+            free(goblin); // töte goblin
+            goblin = NULL;    
+            player1.life -= 1;
+            if (player1.life < 1) {   
+                exit_game(&player1);
+                return 0;
+            }
+        }
         if (bullet.status && goblin != NULL) {
             SDL_Rect bulletRect = {(int)bullet.x, (int)bullet.y, 10, 10};
             if (checkrectCollision2(goblin, bulletRect)) {
